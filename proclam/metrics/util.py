@@ -4,9 +4,9 @@ Utility functions for PLAsTiCC metrics
 
 from __future__ import absolute_import
 __all__ = ['det_to_prob',
-            'prob_to_det',
-            'det_to_cm', 'prob_to_cm',
-            'cm_to_rate', 'det_to_rate', 'prob_to_rate']
+			'prob_to_det',
+			'det_to_cm', 'prob_to_cm',
+			'cm_to_rate', 'det_to_rate', 'prob_to_rate']
 
 import collections
 import numpy as np
@@ -15,239 +15,242 @@ from sklearn.metrics import roc_auc_score
 RateMatrix = collections.namedtuple('rates', 'TPR FPR FNR TNR')
 
 def det_to_prob(dets, prediction=None):
-    """
-    Reformats vector of class assignments into matrix with 1 at true/assigned class and zero elsewhere
+	"""
+	Reformats vector of class assignments into matrix with 1 at true/assigned class and zero elsewhere
 
-    Parameters
-    ----------
-    dets: numpy.ndarray, int
-        vector of classes
-    prediction: numpy.ndarray, float, optional
-        predicted class probabilities
+	Parameters
+	----------
+	dets: numpy.ndarray, int
+		vector of classes
+	prediction: numpy.ndarray, float, optional
+		predicted class probabilities
 
-    Returns
-    -------
-    probs: numpy.ndarray, float
-        matrix with 1 at input classes and 0 elsewhere
+	Returns
+	-------
+	probs: numpy.ndarray, float
+		matrix with 1 at input classes and 0 elsewhere
 
-    Notes
-    -----
-    formerly truth_reformatter
-    Does not yet handle number of classes in truth not matching number of classes in prediction, i.e. for having "other" class or secret classes not in training set.  The prediction keyword is a kludge to enable this but should be replaced.
-    """
-    N = len(dets)
-    indices = range(N)
+	Notes
+	-----
+	formerly truth_reformatter
+	Does not yet handle number of classes in truth not matching number of classes in prediction, i.e. for having "other" class or secret classes not in training set.  The prediction keyword is a kludge to enable this but should be replaced.
+	"""
+	N = len(dets)
+	indices = range(N)
 
-    if prediction is None:
-        prediction_shape = (N, np.max(dets) + 1)
-    else:
-        prediction, dets = np.asarray(prediction), np.asarray(dets)
-        prediction_shape = np.shape(prediction)
+	if prediction is None:
+		prediction_shape = (N, np.max(dets) + 1)
+	else:
+		prediction, dets = np.asarray(prediction), np.asarray(dets)
+		prediction_shape = np.shape(prediction)
 
-    probs = np.zeros(prediction_shape)
-    probs[indices, dets] = 1.
+	probs = np.zeros(prediction_shape)
+	probs[indices, dets] = 1.
 
-    return probs
+	return probs
 
 def prob_to_det(probs):
-    """
-    Converts probabilistic classifications to deterministic classifications by assigning the class with highest probability
+	"""
+	Converts probabilistic classifications to deterministic classifications by assigning the class with highest probability
 
-    Parameters
-    ----------
-    probs: numpy.ndarray, float
-        N * M matrix of class probabilities
+	Parameters
+	----------
+	probs: numpy.ndarray, float
+		N * M matrix of class probabilities
 
-    Returns
-    -------
-    dets: numpy.ndarray, int
-        maximum probability classes
-    """
-    dets = np.argmax(probs, axis=1)
+	Returns
+	-------
+	dets: numpy.ndarray, int
+		maximum probability classes
+	"""
+	dets = np.argmax(probs, axis=1)
 
-    return dets
+	return dets
 
 def binarize(probs, threshold, m):
-    """
-    Converts
-    Parameters
-    ----------
-    probs: numpy.ndarray float
-        N * M matrix of class probabilities
-    threshold: float
-        probability between 0 and 1 to use as threshold for class assignment
-    m: int
-        index of the class in question, must be <M
+	"""
+	Converts
+	Parameters
+	----------
+	probs: numpy.ndarray float
+		N * M matrix of class probabilities
+	threshold: float
+		probability between 0 and 1 to use as threshold for class assignment
+	m: int
+		index of the class in question, must be <M
 
-    Returns
-    -------
-    dets: numpy.ndarray, int
-        -1 for not selected class, C for selected class
-    """
-    # pull out column m
-    # add up probabilites from all other columns
-    # now have all objects' p(class m) and p(class ~m)
-    # call prob_to_det to get class assignments
-    # use -1 for assigned ~m and m for assigned m
-    # send this to det_to_cm
-    pass
+	Returns
+	-------
+	dets: numpy.ndarray, int
+		-1 for not selected class, C for selected class
+	"""
+	# pull out column m
+	# add up probabilites from all other columns
+	# now have all objects' p(class m) and p(class ~m)
+	# call prob_to_det to get class assignments
+	# use -1 for assigned ~m and m for assigned m
+	# send this to det_to_cm
+
+	probs_binary = np.zeros(np.shape(probs)) - 1
+	probs_binary[:,m][probs[:,m] > threshold] = 1
+	probs_binary[:,m][probs[:,m] <= threshold] = 0
+	
+	return probs_binary
 
 def det_to_cm(dets, truth, per_class_norm=True, vb=True):
-    """
-    Converts deterministic classifications and truth into confusion matrix
+	"""
+	Converts deterministic classifications and truth into confusion matrix
 
-    Parameters
-    ----------
-    dets: numpy.ndarray, int
-        assigned classes
-    truth: numpy.ndarray, int
-        true classes
-    per_class_norm: boolean, optional
-        equal weight per class if True, equal weight per object if False
-    vb: boolean, optional
-        if True, print cm
+	Parameters
+	----------
+	dets: numpy.ndarray, int
+		assigned classes
+	truth: numpy.ndarray, int
+		true classes
+	per_class_norm: boolean, optional
+		equal weight per class if True, equal weight per object if False
+	vb: boolean, optional
+		if True, print cm
 
-    Returns
-    -------
-    cm: numpy.ndarray, int
-        confusion matrix
+	Returns
+	-------
+	cm: numpy.ndarray, int
+		confusion matrix
 
-    Notes
-    -----
-    I need to fix the norm keyword all around to enable more options, like normed output vs. not.
-    """
-    pred_classes, pred_counts = np.unique(dets, return_counts=True)
-    true_classes, true_counts = np.unique(truth, return_counts=True)
-    if vb: print((pred_classes, pred_counts), (true_classes, true_counts))
+	Notes
+	-----
+	I need to fix the norm keyword all around to enable more options, like normed output vs. not.
+	"""
+	pred_classes, pred_counts = np.unique(dets, return_counts=True)
+	true_classes, true_counts = np.unique(truth, return_counts=True)
+	if vb: print((pred_classes, pred_counts), (true_classes, true_counts))
 
-    M = max(max(pred_classes), max(true_classes)) + 1
+	M = max(max(pred_classes), max(true_classes)) + 1
 
-    cm = np.zeros((M, M))
-    coords = zip(dets, truth)
-    indices, index_counts = np.unique(coords, axis=0, return_counts=True)
-    # if vb: print(indices, index_counts)
-    indices = indices.T
-    # if vb: print(np.shape(indices))
-    cm[indices[0], indices[1]] = index_counts
-    if vb: print(cm)
+	cm = np.zeros((M, M))
+	coords = zip(dets, truth)
+	indices, index_counts = np.unique(coords, axis=0, return_counts=True)
+	# if vb: print(indices, index_counts)
+	indices = indices.T
+	# if vb: print(np.shape(indices))
+	cm[indices[0].astype(int), indices[1].astype(int)] = index_counts
+	if vb: print(cm)
 
-    if per_class_norm:
-        cm /= true_counts[np.newaxis, :]
+	if per_class_norm:
+		cm /= true_counts[np.newaxis, :]
 
-    if vb: print(cm)
+	if vb: print(cm)
 
-    return cm
+	return cm
 
 def prob_to_cm(probs, truth, per_class_norm=True, vb=True):
-    """
-    Turns probabilistic classifications into confusion matrix by taking maximum probability as deterministic class
+	"""
+	Turns probabilistic classifications into confusion matrix by taking maximum probability as deterministic class
 
-    Parameters
-    ----------
-    probs: numpy.ndarray, float
-        N * M matrix of class probabilities
-    truth: numpy.ndarray, int
-        N-dimensional vector of true classes
-    per_class_norm: boolean, optional
-        equal weight per class if True, equal weight per object if False
-    vb: boolean, optional
-        if True, print cm
+	Parameters
+	----------
+	probs: numpy.ndarray, float
+		N * M matrix of class probabilities
+	truth: numpy.ndarray, int
+		N-dimensional vector of true classes
+	per_class_norm: boolean, optional
+		equal weight per class if True, equal weight per object if False
+	vb: boolean, optional
+		if True, print cm
 
-    Returns
-    -------
-    cm: numpy.ndarray, int
-        confusion matrix
-    """
-    dets = prob_to_det(probs)
+	Returns
+	-------
+	cm: numpy.ndarray, int
+		confusion matrix
+	"""
+	dets = prob_to_det(probs)
 
-    cm = det_to_cm(dets, truth, per_class_norm=per_class_norm, vb=vb)
+	cm = det_to_cm(dets, truth, per_class_norm=per_class_norm, vb=vb)
 
-    return cm
+	return cm
 
 def cm_to_rate(cm, vb=True):
-    """
-    Turns a confusion matrix into true/false positive/negative rates
+	"""
+	Turns a confusion matrix into true/false positive/negative rates
 
-    Parameters
-    ----------
-    cm: numpy.ndarray, int or float
-        confusion matrix, first axis is predictions, second axis is truth
-    vb: boolean, optional
-        print progress to stdout?
+	Parameters
+	----------
+	cm: numpy.ndarray, int or float
+		confusion matrix, first axis is predictions, second axis is truth
+	vb: boolean, optional
+		print progress to stdout?
 
-    Returns
-    -------
-    rates: named tuple, float
-        RateMatrix named tuple
+	Returns
+	-------
+	rates: named tuple, float
+		RateMatrix named tuple
 
-    Notes
-    -----
-    This can be done with a mask to weight the classes differently here.
-    """
-    if vb: print(cm)
-    diag = np.diag(cm)
-    if vb: print(diag)
+	Notes
+	-----
+	This can be done with a mask to weight the classes differently here.
+	"""
+	if vb: print(cm)
+	diag = np.diag(cm)
+	if vb: print(diag)
 
-    TP = np.sum(diag)
-    FN = np.sum(np.sum(cm, axis=0) - diag)
-    FP = np.sum(np.sum(cm, axis=1) - diag)
-    TN = np.sum(cm) - TP
-    if vb: print((TP, FN, FP, TN))
+	TP = np.sum(diag)
+	FN = np.sum(np.sum(cm, axis=0) - diag)
+	FP = np.sum(np.sum(cm, axis=1) - diag)
+	TN = np.sum(cm) - TP
+	if vb: print((TP, FN, FP, TN))
 
-    T = TP + TN
-    F = FP + FN
-    P = TP + FP
-    N = TN + FN
-    if vb: print((T, F, P, N))
+	T = TP + TN
+	F = FP + FN
+	P = TP + FP
+	N = TN + FN
+	if vb: print((T, F, P, N))
 
-    TPR = TP / P
-    FPR = FP / N
-    FNR = FN / P
-    TNR = TN / N
+	TPR = TP / P
+	FPR = FP / N
+	FNR = FN / P
+	TNR = TN / N
 
-    rates = RateMatrix(TPR=TPR, FPR=FPR, FNR=FNR, TNR=TNR)
-    if vb: print(rates)
+	rates = RateMatrix(TPR=TPR, FPR=FPR, FNR=FNR, TNR=TNR)
+	if vb: print(rates)
 
-    return rates
+	return rates
 
 def det_to_rate(dets, truth, per_class_norm=True, vb=True):
-    cm = det_to_cm(dets, truth, per_class_norm=per_class_norm, vb=vb)
-    rates = cm_to_rate(cm, vb=vb)
-    return rates
+	cm = det_to_cm(dets, truth, per_class_norm=per_class_norm, vb=vb)
+	rates = cm_to_rate(cm, vb=vb)
+	return rates
 
 def prob_to_rate(probs, truth, per_class_norm=True, vb=True):
-    cm = prob_to_cm(probs, truth, per_class_norm=per_class_norm, vb=vb)
-    rates = cm_to_rate(cm, vb=vb)
-    return rates
+	cm = prob_to_cm(probs, truth, per_class_norm=per_class_norm, vb=vb)
+	rates = cm_to_rate(cm, vb=vb)
+	return rates
 
 def AUC(x, y):
 	"""
 	Calculate the AUC
 
-    Parameters
-    ----------
-    x: numpy.ndarray, float
-        the x-values of the curve under which to integrate
-    y: numpy.ndarray, float
-        the y-values of the curve under which to integrate
+	Parameters
+	----------
+	x: numpy.ndarray, float
+		the x-values of the curve under which to integrate
+	y: numpy.ndarray, float
+		the y-values of the curve under which to integrate
 
-    Returns
-    -------
-    a: float
-        area under the curve
+	Returns
+	-------
+	a: float
+		area under the curve
 
-    Notes
-    -----
-    The AUC should be sum_i y_i delta(x_i).
-    This might involve interpolation (step function is still interpolation).
+	Notes
+	-----
+	The AUC should be sum_i y_i delta(x_i).
+	This might involve interpolation (step function is still interpolation).
 	"""
-    pass
-	# assert type(pvals) == np.ndarray
-	# assert type(truth) == np.ndarray
-    #
-	# if len(np.unique(truth[pvals > pthresh])) == 1:
-	# 	print('Warning : only one class with P > %.2f cut'%pthresh)
-	# 	return np.nan
-    #
-	# return roc_auc_score(truth[pvals > pthresh],
-	# 					 pvals[pvals > pthresh])
+	iSort = np.argsort(x)
+	x = x[iSort]; y = y[iSort]
+	
+	auc = 0
+	for i in range(len(x[:-1])):
+		auc += y[i]*(x[i+1] - x[i])
+		
+	return auc
