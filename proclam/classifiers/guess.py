@@ -1,7 +1,10 @@
 """
 A subclass for a randomly guessing classifier
 """
+
 from __future__ import absolute_import
+__all__ = ['Guess']
+
 import numpy as np
 
 from .classifier import Classifier
@@ -23,9 +26,9 @@ class Guess(Classifier):
         super(Guess, self).__init__(scheme, seed)
         np.random.seed(seed=self.seed)
 
-    def classify(self, M, truth, other=True, **kwds):
+    def classify(self, M, truth, other=False):
         """
-        Simulates mock classifications based on truth
+        Simulates mock classifications based on truth via random guessing
 
         Parameters
         ----------
@@ -33,7 +36,7 @@ class Guess(Classifier):
             the number of anticipated classes
         truth: numpy.ndarray, float
             class probabilities for all classes for all items
-        other: boolean
+        other: boolean, optional
             include class for other
 
         Returns

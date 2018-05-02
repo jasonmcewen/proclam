@@ -1,4 +1,6 @@
 from __future__ import absolute_import
 
-from . import classifier
-from . import guess
+from .classifier import *
+
+from .guess import *
+from .from_cm import *
