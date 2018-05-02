@@ -67,6 +67,31 @@ def prob_to_det(probs):
 
     return dets
 
+def binarize(probs, threshold, m):
+    """
+    Converts
+    Parameters
+    ----------
+    probs: numpy.ndarray float
+        N * M matrix of class probabilities
+    threshold: float
+        probability between 0 and 1 to use as threshold for class assignment
+    m: int
+        index of the class in question, must be <M
+
+    Returns
+    -------
+    dets: numpy.ndarray, int
+        -1 for not selected class, C for selected class
+    """
+    # pull out column m
+    # add up probabilites from all other columns
+    # now have all objects' p(class m) and p(class ~m)
+    # call prob_to_det to get class assignments
+    # use -1 for assigned ~m and m for assigned m
+    # send this to det_to_cm
+    pass
+
 def det_to_cm(dets, truth, per_class_norm=True, vb=True):
     """
     Converts deterministic classifications and truth into confusion matrix
@@ -195,20 +220,34 @@ def prob_to_rate(probs, truth, per_class_norm=True, vb=True):
     rates = cm_to_rate(cm, vb=vb)
     return rates
 
-def AUC(pvals, truth, pthresh=0.5):
+def AUC(x, y):
 	"""
-	Measures the AUC for a probability
-	threshold given by pthresh
+	Calculate the AUC
+
+    Parameters
+    ----------
+    x: numpy.ndarray, float
+        the x-values of the curve under which to integrate
+    y: numpy.ndarray, float
+        the y-values of the curve under which to integrate
+
+    Returns
+    -------
+    a: float
+        area under the curve
+
+    Notes
+    -----
+    The AUC should be sum_i y_i delta(x_i).
+    This might involve interpolation (step function is still interpolation).
 	"""
-
-	assert type(pvals) == np.ndarray
-	assert type(truth) == np.ndarray
-
-	if len(np.unique(truth[pvals > pthresh])) == 1:
-		print('Warning : only one class with P > %.2f cut'%pthresh)
-		return np.nan
-	
-	return roc_auc_score(truth[pvals > pthresh],
-						 pvals[pvals > pthresh])
-
-
+    pass
+	# assert type(pvals) == np.ndarray
+	# assert type(truth) == np.ndarray
+    #
+	# if len(np.unique(truth[pvals > pthresh])) == 1:
+	# 	print('Warning : only one class with P > %.2f cut'%pthresh)
+	# 	return np.nan
+    #
+	# return roc_auc_score(truth[pvals > pthresh],
+	# 					 pvals[pvals > pthresh])
