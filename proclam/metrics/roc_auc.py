@@ -55,7 +55,6 @@ class ROCAUC(object):
 
 		if not hasattr(thresholds, '__len__'):
 			thresholds = np.linspace(0,1,thresholds)
-#		import pdb; pdb.set_trace()
 			
 		ratesmat = []; auc = []
 		nclass = np.unique(truth)
@@ -63,10 +62,21 @@ class ROCAUC(object):
 			fpr,tpr = np.array([]),np.array([])
 			for t in thresholds:
 				binaryprobs = util.binarize(prediction, t, c)
-				confusemat = util.det_to_cm(binaryprobs[:,c],truth)
-				ratesmat = util.cm_to_rate(confusemat)
-				fpr = np.append(fpr,ratesmat.FPR); tpr = np.append(tpr,ratesmat.TPR)
+				
+				# convert probs and truth into format w/ only yes/no options
+				binaryprobs_onecol = np.zeros(np.shape(binaryprobs)[0])
+				binaryprobs_onecol[:] = binaryprobs[:,c]
+				
+				binarytruth = np.zeros(len(truth),dtype='int')
+				binarytruth[truth == c] = 1
+				binarytruth[truth != c] = 0
+				
+				confusemat = util.det_to_cm(binaryprobs_onecol.astype(int),binarytruth,
+											per_class_norm=True,vb=False)
+				ratesmat = util.cm_to_rate(confusemat,vb=False)
+				fpr = np.append(fpr,confusemat[0,1]); tpr = np.append(tpr,confusemat[0,0])
+				#if np.abs(t - 0.51) < 0.001: import pdb; pdb.set_trace()
 			auc += [util.AUC(tpr,fpr)]
 
-		print(auc)
+			
 		return auc

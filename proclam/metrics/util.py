@@ -126,9 +126,9 @@ def det_to_cm(dets, truth, per_class_norm=True, vb=True):
 	if vb: print((pred_classes, pred_counts), (true_classes, true_counts))
 
 	M = max(max(pred_classes), max(true_classes)) + 1
-
 	cm = np.zeros((M, M))
 	coords = zip(dets, truth)
+
 	indices, index_counts = np.unique(coords, axis=0, return_counts=True)
 	# if vb: print(indices, index_counts)
 	indices = indices.T
@@ -169,7 +169,7 @@ def prob_to_cm(probs, truth, per_class_norm=True, vb=True):
 
 	return cm
 
-def cm_to_rate(cm, vb=True):
+def cm_to_rate(cm, vb=True, debug=False):
 	"""
 	Turns a confusion matrix into true/false positive/negative rates
 
@@ -212,7 +212,7 @@ def cm_to_rate(cm, vb=True):
 
 	rates = RateMatrix(TPR=TPR, FPR=FPR, FNR=FNR, TNR=TNR)
 	if vb: print(rates)
-
+	if debug: import pdb; pdb.set_trace()
 	return rates
 
 def det_to_rate(dets, truth, per_class_norm=True, vb=True):
